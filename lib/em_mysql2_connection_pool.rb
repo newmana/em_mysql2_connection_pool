@@ -76,7 +76,7 @@ class EmMysql2ConnectionPool
     }
   end
 
-  def start_queue(conf)
+  def start_queue
     @pool_size.times do
       worker.call em_connection
     end
