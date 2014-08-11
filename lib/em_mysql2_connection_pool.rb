@@ -15,13 +15,11 @@ class EmMysql2ConnectionPool
     def execute(connection, &block)
       @busy = true
       @query_text = sql(connection)
-      puts "\n\nEMCLIENT: @query_text : #{@query_text.inspect}\n\n"
       q = connection.query @query_text, @opts
       q.callback{ |result| succeed result, connection.affected_rows, &block }
       q.errback{  |error|  fail error, &block }
       return q
       rescue StandardError => error
-        puts "\n\nEMCLIENT:ERROR  -> #{error.inspect}\n\n"
         fail error, &block
     end
 
@@ -30,7 +28,7 @@ class EmMysql2ConnectionPool
     rescue StandardError => error
       fail error
     ensure
-      @busy and block.call
+      @busy and block.call if block
       @busy = false
     end
 
@@ -38,7 +36,7 @@ class EmMysql2ConnectionPool
       @deferrable.errback &default_errback unless has_errbacks?
       @deferrable.fail error, @query_text
     ensure
-      @busy and block.call(true)
+      @busy and block.call(true) if block
       @busy = false
     end
 
@@ -67,7 +65,6 @@ class EmMysql2ConnectionPool
   def worker
     proc{ |connection|
       @query_queue.pop do |query|
-        puts "\n!!!EMCLIENT: EXECUTING QUERY #{query_backlog}\n #{query.inspect}\n\n"
         query.execute(connection) do |refresh_connection|
           connection = em_connection if refresh_connection
           worker.call connection

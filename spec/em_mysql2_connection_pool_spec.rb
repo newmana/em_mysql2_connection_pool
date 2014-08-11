@@ -13,13 +13,13 @@ describe EmMysql2ConnectionPool do
       EM.stop
     end
   end
-  
+
   before(:each) do
     @query_stub = stub('query', :callback => :foo, :errback => :bar)
     @connection_stub = stub('connection', :query => @query_stub)
-    
+
     Mysql2::EM::Client.stub! :new => @connection_stub
-    
+
     @connection_pool = EmMysql2ConnectionPool.new :size => 1
   end
   describe "#initialize" do
@@ -83,7 +83,7 @@ describe EmMysql2ConnectionPool do
   describe "#start_queue" do
     it "should add @pool_size connections to the pool" do
       @connection_pool.pool_size = 10
-      
+
       Mysql2::EM::Client.should_receive(:new).exactly(10).times
       @connection_pool.start_queue
     end
@@ -92,7 +92,7 @@ describe EmMysql2ConnectionPool do
       Mysql2::EM::Client.stub(:new => :connection)
       worker = proc{}
       @connection_pool.stub(:worker => worker)
-      
+
       worker.should_receive(:call).with(:connection).exactly(10).times
       @connection_pool.start_queue
     end
@@ -191,17 +191,33 @@ describe EmMysql2ConnectionPool do
         end
         it "ensures a given block is executed" do
           probe = false
-          
+
           this_query = @query.execute(@connection){ probe = true }
           this_query.callback{ raise 'HELL' }
           this_query.succeed rescue nil
+          probe.should be_true
+        end
+        it "calls fail if deferrable.succeed and callback throws error" do
+          this_query = @query.execute(@connection)
+          this_query.callback{ raise 'HELL' }
+          this_query.succeed{ raise 'HELL' }
+        end
+        it "calls fail if deferrable.succeed and callback throws error" do
+          this_query = @query.execute(@connection)
+          this_query.succeed{ raise 'HELL' }
+        end
+        it "test the method gets called if set and succeed and callback throws error" do
+          probe = false
+          this_query = @query.execute(@connection){ probe = true }
+          this_query.callback{ raise 'HELL' }
+          this_query.succeed{ raise 'HELL' }
           probe.should be_true
         end
       end
       describe "when failing" do
         it "ensures a given block is executed" do
           probe = false
-          
+
           this_query = @query.execute(@connection){ probe = true }
           this_query.errback{ raise 'HELL' }
           this_query.fail rescue nil
@@ -245,7 +261,7 @@ describe EmMysql2ConnectionPool do
     end
     describe "#fail" do
       before(:each) do
-        @sql_error = StandardError.new('error!!1')
+        @sql_error = StandardError.new('error!!')
         @sql_error.set_backtrace([])
       end
       describe "when the query doesn't have an errback" do
@@ -288,12 +304,12 @@ describe EmMysql2ConnectionPool do
       end
     end
     describe "#has_errbacks?" do
-      
+
     end
     describe "#default_errback" do
-      
+
     end
-    
+
   end
-  
+
 end
