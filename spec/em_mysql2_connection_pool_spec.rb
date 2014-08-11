@@ -48,7 +48,7 @@ describe EmMysql2ConnectionPool do
     end
     it "should start the queue with the configuration" do
       conf = {:foo => :bar}
-      @connection_pool.should_receive(:start_queue).with(conf)
+      @connection_pool.should_receive(:start_queue)
       @connection_pool.send :initialize, conf
     end
   end
@@ -85,7 +85,7 @@ describe EmMysql2ConnectionPool do
       @connection_pool.pool_size = 10
       
       Mysql2::EM::Client.should_receive(:new).exactly(10).times
-      @connection_pool.start_queue({})
+      @connection_pool.start_queue
     end
     it "should start querying with each" do
       @connection_pool.pool_size = 10
@@ -94,7 +94,7 @@ describe EmMysql2ConnectionPool do
       @connection_pool.stub(:worker => worker)
       
       worker.should_receive(:call).with(:connection).exactly(10).times
-      @connection_pool.start_queue({})
+      @connection_pool.start_queue
     end
   end
   describe "#query" do
